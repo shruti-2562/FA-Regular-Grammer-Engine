@@ -1,6 +1,7 @@
 {
   "name": "FA Regular Grammar Engine",
   "short_name": "FA Grammar",
+  "id": "/FA-Regular-Grammer-Engine/",
   "description": "DFA to Left-Linear and Right-Linear Grammar Conversion",
   "start_url": "./",
   "scope": "./",
@@ -11,12 +12,14 @@
     {
       "src": "./icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "./icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
