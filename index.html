@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#d6a21e">
+<link rel="icon" type="image/png" href="./icons/icon-192.png">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>FA → Regular Grammar Engine</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    font-family:Arial,sans-serif;
+    min-height:100vh;
+    color:white;
+    background:
+        radial-gradient(circle at top left,#6b4f0b,transparent 35%),
+        radial-gradient(circle at bottom right,#2a2110,transparent 35%),
+        #11100d;
+    padding:25px;
+}
+
+.container{
+    max-width:1250px;
+    margin:auto;
+}
+
+header{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.logo{
+    font-size:38px;
+    font-weight:800;
+    background:linear-gradient(90deg,#d6a21e,#f3d77a);
+    -webkit-background-clip:text;
+    color:transparent;
+}
+
+.subtitle{
+    margin-top:8px;
+    color:#aaaabc;
+}
+
+.card{
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.13);
+    border-radius:20px;
+    padding:25px;
+    margin-bottom:25px;
+    backdrop-filter:blur(15px);
+    box-shadow:0 15px 45px rgba(0,0,0,.3);
+}
+
+.card h2{
+    margin-bottom:20px;
+}
+
+.input-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:18px;
+}
+
+label{
+    display:block;
+    color:#bbb;
+    margin-bottom:7px;
+    font-size:14px;
+}
+
+input{
+    width:100%;
+    padding:13px;
+    border-radius:10px;
+    border:1px solid #4a3b1c;
+    background:#1b1811;
+    color:white;
+    outline:none;
+}
+
+input:focus{
+    border-color:#8b5cf6;
+    box-shadow:0 0 10px rgba(139,92,246,.25);
+}
+
+.buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:20px;
+}
+
+button{
+    border:none;
+    padding:13px 20px;
+    border-radius:10px;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    background:linear-gradient(90deg,#a97808,#d6a21e);
+    transition:.25s;
+}
+
+button:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 25px rgba(124,58,237,.35);
+}
+
+.secondary{
+    background:#29251b;
+}
+
+.transition-header,
+.transition-row{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr 45px;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.transition-header{
+    color:#999;
+    font-size:14px;
+}
+
+.delete-btn{
+    background:#7f1d1d;
+    padding:8px;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:15px;
+    margin-bottom:25px;
+}
+
+.stat{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:15px;
+    padding:18px;
+    text-align:center;
+}
+
+.stat-number{
+    font-size:27px;
+    font-weight:bold;
+    color:#d6a21e;
+}
+
+.stat-title{
+    color:#aaa;
+    margin-top:5px;
+    font-size:13px;
+}
+
+/* DFA CANVAS */
+#dfaCanvas{
+    height:500px;
+    position:relative;
+    overflow:hidden;
+    background:
+        radial-gradient(circle,#17172b 1px,transparent 1px);
+    background-size:25px 25px;
+    border-radius:16px;
+    border:1px solid #4b3b1d;
+}
+
+#dfaSVG{
+    position:absolute;
+    width:100%;
+    height:100%;
+    left:0;
+    top:0;
+    z-index:1;
+}
+
+.state{
+    position:absolute;
+    width:72px;
+    height:72px;
+    border-radius:50%;
+    background:#11111f;
+    border:3px solid #d6a21e;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    z-index:5;
+    transform:translate(-50%,-50%);
+}
+
+.state.final{
+    border-color:#f3d77a;
+    box-shadow:0 0 0 5px rgba(34,211,238,.15);
+}
+
+.state.final::after{
+    content:"";
+    position:absolute;
+    width:58px;
+    height:58px;
+    border:2px solid #f3d77a;
+    border-radius:50%;
+}
+
+.result-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+.grammar{
+    background:#17140e;
+    border:1px solid #4b3b1d;
+    border-radius:15px;
+    padding:18px;
+    min-height:180px;
+}
+
+.rule{
+    font-family:monospace;
+    padding:10px;
+    margin-bottom:5px;
+    border-bottom:1px solid #332a17;
+    color:#ddd;
+}
+
+.rule strong{
+    color:#d6a21e;
+}
+
+.strings{
+    display:flex;
+    flex-wrap:wrap;
+    gap:9px;
+}
+
+.string{
+    padding:8px 13px;
+    background:#211c12;
+    border:1px solid #51411f;
+    border-radius:20px;
+    font-family:monospace;
+}
+
+.test-box{
+    display:flex;
+    gap:10px;
+}
+
+.test-result{
+    margin-top:15px;
+    padding:15px;
+    border-radius:12px;
+    background:#11111d;
+}
+
+.accept{
+    color:#4ade80;
+}
+
+.reject{
+    color:#fb7185;
+}
+
+@media(max-width:800px){
+    .input-grid,
+    .result-grid{
+        grid-template-columns:1fr;
+    }
+
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    body{
+        padding:12px;
+    }
+
+    .logo{
+        font-size:27px;
+    }
+
+    .transition-header,
+    .transition-row{
+        grid-template-columns:1fr 1fr 1fr 40px;
+    }
+}
+
+/* PREMIUM MUSTARD DASHBOARD */
+body{background:radial-gradient(circle at 10% 0%,rgba(214,162,30,.18),transparent 28%),radial-gradient(circle at 90% 100%,rgba(214,162,30,.10),transparent 30%),#11100d;color:#fff8e8;}
+.container{max-width:1320px;}
+.logo{background:linear-gradient(90deg,#f3d77a,#d6a21e,#fff0b0);-webkit-background-clip:text;}
+.subtitle{color:#c9bea3;}
+.card,.stat{background:linear-gradient(145deg,rgba(255,248,232,.075),rgba(255,248,232,.035));border:1px solid rgba(214,162,30,.28);box-shadow:0 18px 50px rgba(0,0,0,.35);}
+.card h2{color:#fff8e8;}
+label{color:#cfc3a8;}
+input{background:#18150f;border-color:#55451f;color:#fff8e8;}
+input:focus{border-color:#d6a21e;box-shadow:0 0 0 3px rgba(214,162,30,.13);}
+.buttons{align-items:center;}
+button{background:linear-gradient(135deg,#d6a21e,#a97808);color:#17120a;border:1px solid #f3d77a;box-shadow:0 8px 20px rgba(214,162,30,.16);}
+button:hover{box-shadow:0 10px 28px rgba(214,162,30,.28);}
+.secondary{background:#29251b;color:#f3d77a;border-color:#665221;}
+.stats{gap:16px;}
+.stat-number{color:#f3d77a;}
+#dfaCanvas{background:radial-gradient(circle,rgba(214,162,30,.12) 1px,transparent 1px);background-size:28px 28px;border-color:#5a461b;}
+.state{background:#18150f;border-color:#d6a21e;box-shadow:0 0 0 5px rgba(214,162,30,.06);color:#fff8e8;}
+.state.final{border-color:#f3d77a;box-shadow:0 0 0 5px rgba(243,215,122,.12),0 0 25px rgba(214,162,30,.18);}
+.state.final::after{border-color:#f3d77a;}
+.grammar{background:#14120e;border-color:#4b3b1d;}
+.rule strong{color:#f3d77a;}
+.string{background:#211c12;border-color:#665221;color:#fff0b0;}
+.test-result{background:#17140e;border:1px solid #4b3b1d;}
+.accept{color:#5ee28a!important;} .reject{color:#ff6b6b!important;}
+.delete-btn{background:#6d2424;color:#fff;border-color:#9c3b3b;}
+/* clean action strip instead of dropdowns */
+.dashboard-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;}
+.example-select-label{color:#f3d77a;font-weight:800;margin:0 2px 0 0;font-size:13px;}
+.example-select{padding:10px 14px;border-radius:10px;border:1px solid #8f6d12;background:#17140e;color:#fff8e8;font-weight:700;min-width:245px;outline:none;}
+.example-select:focus{border-color:#d6a21e;box-shadow:0 0 0 3px rgba(214,162,30,.14);}
+.step-title{display:flex;align-items:center;gap:10px;}
+.step-no{display:inline-flex;width:32px;height:32px;border-radius:50%;align-items:center;justify-content:center;background:#d6a21e;color:#151515;font-size:14px;font-weight:900;box-shadow:0 4px 12px rgba(214,162,30,.25);}
+@media(max-width:800px){.example-select{width:100%;min-width:0}.example-select-label{width:100%;}}
+.dashboard-actions button{padding:10px 16px;font-size:13px;}
+#dfaSVG .node{fill:#18150f;stroke:#d6a21e;stroke-width:4;}#dfaSVG .finalNode{stroke:#f3d77a;}#dfaSVG .innerNode{fill:none;stroke:#f3d77a;stroke-width:3;}#dfaSVG .nodeText{fill:#fff8e8;font-size:20px;font-weight:800;}#dfaSVG .edgeText{fill:#f3d77a;font-size:18px;font-weight:800;paint-order:stroke;stroke:#11100d;stroke-width:7px;stroke-linejoin:round;}#dfaSVG .startText{fill:#d6a21e;font-size:14px;font-weight:800;letter-spacing:1px;}
+
+.example-panel{margin:0 0 22px;padding:16px 18px;border:1px solid #5a4617;border-radius:14px;background:linear-gradient(135deg,#211b10,#17140e);box-shadow:inset 0 1px 0 rgba(243,215,122,.06);}
+.example-heading{display:flex;align-items:center;gap:9px;color:#f3d77a;font-weight:800;font-size:15px;margin-bottom:11px;}
+.example-heading span{font-size:12px;color:#a99a78;font-weight:500;}
+.example-controls{display:flex;gap:10px;align-items:center;}
+.example-select{flex:1;min-width:0;height:44px;padding:0 14px;border-radius:10px;border:1px solid #765a16;background:#0f0d09;color:#fff8e8;font-weight:700;outline:none;}
+.example-load{height:44px;white-space:nowrap;background:#d6a21e;color:#151515;border:1px solid #e5bc45;}
+.example-load:hover{background:#f3c94f;box-shadow:0 8px 22px rgba(214,162,30,.22);}
+@media(max-width:800px){.example-controls{flex-direction:column;align-items:stretch}.example-load{width:100%}.example-heading{align-items:flex-start;flex-direction:column;gap:3px}}
+
+/* Requirement-focused dashboard action placement */
+.dashboard-actions{display:none!important;}
+.compact-example{margin:18px 0 20px;padding:14px 16px;}
+.compact-example .example-heading{margin-bottom:9px;}
+.compact-example .example-controls{max-width:100%;}
+.compact-example .example-select{height:42px;}
+.compact-example .example-load{height:42px;padding:0 22px;}
+.config-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid rgba(214,162,30,.18);}
+.config-actions button{min-height:44px;padding:11px 20px;}
+.action-primary{background:linear-gradient(135deg,#e0ad22,#b67e08)!important;color:#151515!important;border:1px solid #f3d77a!important;font-weight:900;}
+.action-secondary{background:#29251b!important;color:#f3d77a!important;border:1px solid #665221!important;}
+.reset-action{margin-left:auto;}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.fit-action{margin-left:auto;padding:9px 15px!important;font-size:13px!important;}
+@media(max-width:700px){.config-actions{flex-direction:column;align-items:stretch}.config-actions button{width:100%;}.reset-action{margin-left:0}.section-head{align-items:flex-start;flex-direction:column}.fit-action{margin-left:0;width:100%;}}
+
+/* TABLE OF CONTENTS */
+.toc-card{
+    background:rgba(255,248,232,.055);
+    border:1px solid rgba(214,162,30,.28);
+    border-radius:18px;
+    padding:16px 18px;
+    margin-bottom:24px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+    position:sticky;
+    top:12px;
+    z-index:20;
+    backdrop-filter:blur(16px);
+}
+.toc-title{
+    color:#f3d77a;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    margin-bottom:11px;
+}
+.toc-nav{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+}
+.toc-nav a{
+    text-decoration:none;
+    color:#fff8e8;
+    background:#1c1912;
+    border:1px solid #4b3b1d;
+    border-radius:10px;
+    padding:9px 12px;
+    font-size:13px;
+    font-weight:700;
+    transition:.2s;
+}
+.toc-nav a:hover{
+    color:#151515;
+    background:#d6a21e;
+    border-color:#f3d77a;
+    transform:translateY(-1px);
+}
+html{scroll-behavior:smooth;}
+#step01,#step02,#step03,#step04a,#step04b,#step05,#step06{scroll-margin-top:95px;}
+@media(max-width:700px){
+    .toc-card{position:relative;top:auto;}
+    .toc-nav{display:grid;grid-template-columns:repeat(2,1fr);}
+    .toc-nav a{text-align:center;}
+}
+.install-btn {
+    display: inline-block !important;
+    background: #d6a21e !important;
+    color: #151515 !important;
+    border: 1px solid #f3d77a !important;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 8px 20px rgba(214,162,30,.20);
+}
+
+.install-btn:hover {
+    background: #f3d77a !important;
+    transform: translateY(-2px);
+}
+
+.install-btn:hover {
+    background: #f3d77a;
+    transform: translateY(-2px);
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+    <div style="font-size:14px;font-weight:800;letter-spacing:2px;color:#d6a21e;margin-bottom:10px;">THEORY OF COMPUTATION</div>
+    <div class="logo">
+        ⚡ FA → REGULAR GRAMMAR ENGINE
+    </div>
+
+    <div class="subtitle">
+        DFA to Equivalent Left-Linear & Right-Linear Grammar Conversion
+    </div>
+</header>
+
+<!-- DFA CONFIGURATION -->
+
+<div class="card" id="step01">
+
+<h2 class="step-title"><span class="step-no">01</span> 🧩 DFA Configuration</h2>
+
+
+
+<div class="input-grid">
+
+<div>
+<label>States</label>
+<input id="states" placeholder="q0,q1,q2">
+</div>
+
+<div>
+<label>Alphabet</label>
+<input id="alphabet" placeholder="0,1">
+</div>
+
+<div>
+<label>Start State</label>
+<input id="start" placeholder="q0">
+</div>
+
+<div>
+<label>Final States</label>
+<input id="final" placeholder="q2">
+</div>
+
+</div>
+
+<div class="example-panel compact-example">
+  <div class="example-heading">📚 Example Library <span>Optional ready-made DFA configuration</span></div>
+  <div class="example-controls">
+    <select id="exampleSelect" class="example-select">
+      <option value="example1">Example 1 — Contains 10 · 3 States</option>
+      <option value="example2">Example 2 — Ends with 1 · 4 States</option>
+      <option value="example3">Example 3 — Even 0s · 4 States</option>
+      <option value="example4">Example 4 — Contains 01 · 4 States</option>
+    </select>
+    <button class="example-load" onclick="loadExample(document.getElementById('exampleSelect').value)">Load Example</button>
+  </div>
+</div>
+
+<br>
+
+<h3>🔗 Transitions</h3>
+
+<br>
+
+<div class="transition-header">
+<span>From</span>
+<span>Input</span>
+<span>To</span>
+<span></span>
+</div>
+
+<div id="transitions"></div>
+
+<div class="config-actions">
+    <button class="action-secondary" onclick="addTransition()">➕ Add Transition</button>
+
+    <button class="action-primary" onclick="generate()">⚡ Generate Results</button>
+
+    <button class="action-secondary reset-action" onclick="resetAll()">↻ Reset</button>
+
+    <button id="installAppBtn" class="install-btn">
+    📲 Install App
+</button>
+</div>
+
+</div>
+
+
+<!-- STEP 02 -->
+<div class="card" id="step02" style="padding:14px 20px;margin-bottom:18px;">
+<h3 class="step-title"><span class="step-no">02</span> 📊 DFA Quick Statistics</h3>
+</div>
+
+<!-- STATS -->
+
+<div class="stats">
+
+<div class="stat">
+<div class="stat-number" id="stateCount">0</div>
+<div class="stat-title">States</div>
+</div>
+
+<div class="stat">
+<div class="stat-number" id="alphabetCount">0</div>
+<div class="stat-title">Alphabet Symbols</div>
+</div>
+
+<div class="stat">
+<div class="stat-number" id="finalCount">0</div>
+<div class="stat-title">Final States</div>
+</div>
+
+<div class="stat">
+<div class="stat-number" id="stringCount">0</div>
+<div class="stat-title">Accepted Strings</div>
+</div>
+
+</div>
+
+
+<!-- DFA VISUALIZATION -->
+
+<div class="card" id="step03">
+
+<div class="section-head">
+  <h2 class="step-title"><span class="step-no">03</span> 🌀 DFA Visualization</h2>
+  <button class="secondary fit-action" onclick="fitDiagram()">⌗ Fit Diagram</button>
+</div>
+
+<div id="dfaCanvas">
+
+<svg id="dfaSVG"></svg>
+
+<div id="placeholder"
+style="
+text-align:center;
+padding-top:190px;
+color:#666;
+">
+Enter DFA and click Generate Grammars
+</div>
+
+</div>
+
+</div>
+
+
+<!-- GRAMMARS -->
+
+<div class="result-grid">
+
+<div class="card" id="step04a">
+
+<h2 class="step-title"><span class="step-no">04A</span> ➡️ Right-Linear Grammar</h2>
+
+<div id="rightGrammar" class="grammar">
+Generate grammar to see rules.
+</div>
+
+</div>
+
+
+<div class="card" id="step04b">
+
+<h2 class="step-title"><span class="step-no">04B</span> ⬅️ Left-Linear Grammar</h2>
+
+<div id="leftGrammar" class="grammar">
+Generate grammar to see rules.
+</div>
+
+</div>
+
+</div>
+
+
+<!-- STRING SET -->
+
+<div class="card" id="step05">
+
+<h2 class="step-title"><span class="step-no">05</span> 🔤 Generated String Set</h2>
+
+<p style="color:#aaa;margin-bottom:15px;">
+Accepted strings up to length 5
+</p>
+
+<div id="stringSet" class="strings">
+No strings generated yet.
+</div>
+
+</div>
+
+
+<!-- STRING TESTER -->
+
+<div class="card" id="step06">
+
+<h2 class="step-title"><span class="step-no">06</span> 🧪 Test a String</h2>
+
+<div class="test-box">
+
+<input
+id="testString"
+placeholder="Example: 10101">
+
+<button onclick="testString()">
+TEST
+</button>
+
+</div>
+
+<div id="testResult"></div>
+
+</div>
+
+</div>
+
+
+<script>
+
+let transitionCount = 0;
+
+
+/* =========================
+   ADD TRANSITION
+========================= */
+
+function addTransition(from="", symbol="", to=""){
+
+    const row = document.createElement("div");
+
+    row.className = "transition-row";
+
+    row.innerHTML = `
+        <input class="from" value="${from}" placeholder="q0">
+
+        <input class="symbol" value="${symbol}" placeholder="0">
+
+        <input class="to" value="${to}" placeholder="q1">
+
+        <button
+            class="delete-btn"
+            onclick="this.parentElement.remove()">
+            ×
+        </button>
+    `;
+
+    document
+        .getElementById("transitions")
+        .appendChild(row);
+
+    transitionCount++;
+}
+
+
+/* =========================
+   GET DFA DATA
+========================= */
+
+function getData(){
+
+    const states =
+        document
+        .getElementById("states")
+        .value
+        .split(",")
+        .map(x => x.trim())
+        .filter(Boolean);
+
+    const alphabet =
+        document
+        .getElementById("alphabet")
+        .value
+        .split(",")
+        .map(x => x.trim())
+        .filter(Boolean);
+
+    const start =
+        document
+        .getElementById("start")
+        .value
+        .trim();
+
+    const finals =
+        document
+        .getElementById("final")
+        .value
+        .split(",")
+        .map(x => x.trim())
+        .filter(Boolean);
+
+    const rows =
+        document.querySelectorAll(".transition-row");
+
+    const transitions = [];
+
+    rows.forEach(row => {
+
+        const from =
+            row.querySelector(".from").value.trim();
+
+        const symbol =
+            row.querySelector(".symbol").value.trim();
+
+        const to =
+            row.querySelector(".to").value.trim();
+
+        if(from && symbol && to){
+
+            transitions.push({
+                from: from,
+                symbol: symbol,
+                to: to
+            });
+
+        }
+
+    });
+
+    return {
+        states,
+        alphabet,
+        start,
+        finals,
+        transitions
+    };
+}
+
+
+/* =========================
+   RIGHT LINEAR GRAMMAR
+========================= */
+
+function createRightGrammar(data){
+
+    const rules = {};
+
+    data.states.forEach(q => {
+        rules[q] = [];
+    });
+
+    data.transitions.forEach(t => {
+
+        if(rules[t.from]){
+            rules[t.from].push(
+                t.symbol + t.to
+            );
+        }
+
+    });
+
+    data.finals.forEach(f => {
+
+        if(rules[f]){
+            rules[f].push("ε");
+        }
+
+    });
+
+    return rules;
+}
+
+
+/* =========================
+   LEFT LINEAR GRAMMAR
+========================= */
+
+function createLeftGrammar(data){
+
+    const rules = {};
+
+    rules["S"] = [];
+
+    data.states.forEach(q => {
+        rules[q] = [];
+    });
+
+    /* S → Qf */
+
+    data.finals.forEach(f => {
+
+        rules["S"].push(f);
+
+    });
+
+    /* Reverse transitions */
+
+    data.transitions.forEach(t => {
+
+        if(rules[t.to]){
+
+            rules[t.to].push(
+                t.from + t.symbol
+            );
+
+        }
+
+    });
+
+    /* Qstart → ε */
+
+    if(rules[data.start]){
+
+        rules[data.start].push("ε");
+
+    }
+
+    return rules;
+}
+
+
+/* =========================
+   DISPLAY GRAMMAR
+========================= */
+
+function displayGrammar(rules,id){
+
+    const box =
+        document.getElementById(id);
+
+    box.innerHTML = "";
+
+    Object.keys(rules).forEach(state => {
+
+        if(rules[state].length === 0){
+            return;
+        }
+
+        const div =
+            document.createElement("div");
+
+        div.className = "rule";
+
+        div.innerHTML =
+            `<strong>${state}</strong> → ` +
+            rules[state].join(" | ");
+
+        box.appendChild(div);
+
+    });
+}
+
+
+/* =========================
+   GENERATE STRINGS
+========================= */
+
+function generateStrings(data,maxLength=5){
+
+    const result = new Set();
+
+    function dfs(state,str,depth){
+
+        if(data.finals.includes(state)){
+            result.add(str);
+        }
+
+        if(depth === maxLength){
+            return;
+        }
+
+        data.transitions
+            .filter(t => t.from === state)
+            .forEach(t => {
+
+                dfs(
+                    t.to,
+                    str + t.symbol,
+                    depth + 1
+                );
+
+            });
+
+    }
+
+    dfs(data.start,"",0);
+
+    return [...result].sort((a,b) => {
+
+        if(a.length !== b.length){
+            return a.length - b.length;
+        }
+
+        return a.localeCompare(b);
+
+    });
+}
+
+
+/* =========================
+   DISPLAY STRINGS
+========================= */
+
+function displayStrings(strings){
+
+    const box =
+        document.getElementById("stringSet");
+
+    box.innerHTML = "";
+
+    if(strings.length === 0){
+
+        box.textContent = "No accepted strings.";
+
+    }
+
+    strings.forEach(str => {
+
+        const span =
+            document.createElement("span");
+
+        span.className = "string";
+
+        span.textContent =
+            str === "" ? "ε" : str;
+
+        box.appendChild(span);
+
+    });
+
+    document
+        .getElementById("stringCount")
+        .textContent = strings.length;
+}
+
+
+/* =========================
+   UPDATE STATS
+========================= */
+
+function updateStats(data,strings){
+
+    document
+        .getElementById("stateCount")
+        .textContent = data.states.length;
+
+    document
+        .getElementById("alphabetCount")
+        .textContent = data.alphabet.length;
+
+    document
+        .getElementById("finalCount")
+        .textContent = data.finals.length;
+
+    document
+        .getElementById("stringCount")
+        .textContent = strings.length;
+}
+
+
+let diagramGenerated = false;
+
+/* =========================
+   DFA VISUALIZATION
+========================= */
+
+function drawDFA(data){
+ const canvas=document.getElementById("dfaCanvas");
+ canvas.innerHTML='<svg id="dfaSVG" viewBox="0 0 1100 620" preserveAspectRatio="xMidYMid meet"></svg>';
+ const svg=document.getElementById("dfaSVG"),NS="http://www.w3.org/2000/svg",R=42,pos={};
+ const n=data.states.length;
+ if(n===1)pos[data.states[0]]={x:550,y:310};
+ else if(n===2){pos[data.states[0]]={x:300,y:310};pos[data.states[1]]={x:800,y:310};}
+ else if(n===3){pos[data.states[0]]={x:190,y:430};pos[data.states[1]]={x:550,y:170};pos[data.states[2]]={x:910,y:430};}
+ else data.states.forEach((q,i)=>{let a=-Math.PI/2+i*2*Math.PI/n;pos[q]={x:550+330*Math.cos(a),y:310+140*Math.sin(a)}});
+ svg.innerHTML='<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#a97808"/></marker><marker id="startArrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#d6a21e"/></marker></defs>';
+ const addText=(txt,x,y,cls='edgeText')=>{let t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('class',cls);t.setAttribute('text-anchor','middle');t.textContent=txt;svg.appendChild(t)};
+ const addPath=d=>{let p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('fill','none');p.setAttribute('stroke','#a97808');p.setAttribute('stroke-width','3');p.setAttribute('marker-end','url(#arrow)');svg.appendChild(p)};
+ const st=pos[data.start]; if(st){let l=document.createElementNS(NS,'line');l.setAttribute('x1',st.x-115);l.setAttribute('y1',st.y);l.setAttribute('x2',st.x-R-8);l.setAttribute('y2',st.y);l.setAttribute('stroke','#d6a21e');l.setAttribute('stroke-width','4');l.setAttribute('marker-end','url(#startArrow)');svg.appendChild(l);addText('START',st.x-85,st.y-15,'startText');}
+ // Group transitions: one clean loop per state and one edge per state-pair. Labels are combined.
+ const groups={};
+ data.transitions.forEach(t=>{if(t.from===t.to){(groups.loop??={})[t.from]=(groups.loop[t.from]||[]).concat(t.symbol);}else{let k=t.from+'→'+t.to;(groups.edge??={})[k]=(groups.edge[k]||[]).concat(t.symbol);}});
+ Object.entries(groups.edge||{}).forEach(([k,syms])=>{let [a,b]=k.split('→'),f=pos[a],to=pos[b];if(!f||!to)return;let dx=to.x-f.x,dy=to.y-f.y,d=Math.hypot(dx,dy),ux=dx/d,uy=dy/d,px=-uy,py=ux,x1=f.x+ux*R,y1=f.y+uy*R,x2=to.x-ux*R,y2=to.y-uy*R;if(a===b)return;let curve=(a===data.states[0]&&b===data.states[1])?-35:35;let mx=(x1+x2)/2+px*curve,my=(y1+y2)/2+py*curve;addPath(`M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`);addText(syms.join(', '),mx,my-10);});
+ Object.entries(groups.loop||{}).forEach(([q,syms])=>{let p=pos[q];addPath(`M ${p.x-24} ${p.y-R+2} C ${p.x-95} ${p.y-155}, ${p.x+95} ${p.y-155}, ${p.x+24} ${p.y-R+2}`);addText(syms.join(', '),p.x,p.y-128);});
+ data.states.forEach(q=>{let p=pos[q],g=document.createElementNS(NS,'g');let c=document.createElementNS(NS,'circle');c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);c.setAttribute('r',R);c.setAttribute('class',data.finals.includes(q)?'node finalNode':'node');g.appendChild(c);if(data.finals.includes(q)){let c2=document.createElementNS(NS,'circle');c2.setAttribute('cx',p.x);c2.setAttribute('cy',p.y);c2.setAttribute('r',R-8);c2.setAttribute('class','innerNode');g.appendChild(c2);}let tx=document.createElementNS(NS,'text');tx.setAttribute('x',p.x);tx.setAttribute('y',p.y+6);tx.setAttribute('class','nodeText');tx.setAttribute('text-anchor','middle');tx.textContent=q;g.appendChild(tx);svg.appendChild(g);});
+}
+function fitDiagram(){
+  if(!diagramGenerated) return;
+  try{
+    drawDFA(getData());
+    const s=document.getElementById('dfaSVG');
+    if(!s) return;
+    const box=s.getBBox();
+    const pad=55;
+    const x=box.x-pad, y=box.y-pad;
+    const w=Math.max(box.width+pad*2, 100);
+    const h=Math.max(box.height+pad*2, 100);
+    s.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+    s.setAttribute('preserveAspectRatio','xMidYMid meet');
+    s.style.width='100%';
+    s.style.height='100%';
+  }catch(e){
+    const s=document.getElementById('dfaSVG');
+    if(s) s.setAttribute('preserveAspectRatio','xMidYMid meet');
+  }
+}
+window.addEventListener('resize',()=>{if(diagramGenerated){try{drawDFA(getData())}catch(e){}}});
+
+/* =========================
+   SVG LABEL
+========================= */
+
+function addLabel(svg,text,x,y){
+
+    const label =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+        );
+
+    label.setAttribute(
+        "x",
+        x
+    );
+
+    label.setAttribute(
+        "y",
+        y
+    );
+
+    label.setAttribute(
+        "fill",
+        "#d6a21e"
+    );
+
+    label.setAttribute(
+        "font-size",
+        "16"
+    );
+
+    label.setAttribute(
+        "font-weight",
+        "bold"
+    );
+
+    label.setAttribute(
+        "text-anchor",
+        "middle"
+    );
+
+    label.textContent = text;
+
+    svg.appendChild(label);
+}
+
+
+/* =========================
+   GENERATE
+========================= */
+
+function generate(){
+
+    const data = getData();
+
+    if(data.states.length === 0){
+
+        alert("Please enter states.");
+
+        return;
+    }
+
+    if(!data.start){
+
+        alert("Please enter start state.");
+
+        return;
+    }
+
+    if(!data.states.includes(data.start)){
+
+        alert(
+            "Start state must be one of the states."
+        );
+
+        return;
+    }
+
+
+    const right =
+        createRightGrammar(data);
+
+    const left =
+        createLeftGrammar(data);
+
+
+    displayGrammar(
+        right,
+        "rightGrammar"
+    );
+
+    displayGrammar(
+        left,
+        "leftGrammar"
+    );
+
+
+    const strings =
+        generateStrings(data,5);
+
+    displayStrings(strings);
+
+    updateStats(
+        data,
+        strings
+    );
+
+    diagramGenerated = true;
+    drawDFA(data);
+}
+
+
+/* =========================
+   STRING TESTER
+========================= */
+
+function testString(){
+
+    const data = getData();
+
+    const input =
+        document
+        .getElementById("testString")
+        .value
+        .trim();
+
+
+    let current = data.start;
+
+    let path = [current];
+
+    let valid = true;
+
+
+    for(const symbol of input){
+
+        const transition =
+            data.transitions.find(
+                t =>
+                    t.from === current &&
+                    t.symbol === symbol
+            );
+
+        if(!transition){
+
+            valid = false;
+
+            break;
+        }
+
+        current = transition.to;
+
+        path.push(current);
+    }
+
+
+    const result =
+        document.getElementById(
+            "testResult"
+        );
+
+
+    if(
+        valid &&
+        data.finals.includes(current)
+    ){
+
+        result.innerHTML = `
+
+            <div class="test-result">
+
+                <h3 class="accept">
+                    ✓ ACCEPTED
+                </h3>
+
+                <br>
+
+                <p>
+                    <b>Path:</b>
+                    ${path.join(" → ")}
+                </p>
+
+                <br>
+
+                <p>
+                    Final State:
+                    <b>${current}</b>
+                </p>
+
+            </div>
+
+        `;
+
+    }
+
+    else{
+
+        result.innerHTML = `
+
+            <div class="test-result">
+
+                <h3 class="reject">
+                    ✕ REJECTED
+                </h3>
+
+                <br>
+
+                <p>
+                    <b>Path:</b>
+                    ${path.join(" → ")}
+                </p>
+
+                <br>
+
+                <p>
+                    Current State:
+                    <b>${current}</b>
+                </p>
+
+            </div>
+
+        `;
+
+    }
+
+}
+
+
+/* =========================
+   LOAD EXAMPLE
+========================= */
+
+function loadExample(example="example1"){
+
+    const examples = {
+        example1:{
+            states:"q0,q1,q2", alphabet:"0,1", start:"q0", final:"q2",
+            transitions:[["q0","0","q0"],["q0","1","q1"],["q1","0","q2"],["q1","1","q1"],["q2","0","q2"],["q2","1","q2"]]
+        },
+        example2:{
+            states:"q0,q1,q2,q3", alphabet:"0,1", start:"q0", final:"q3",
+            transitions:[["q0","0","q0"],["q0","1","q1"],["q1","0","q2"],["q1","1","q1"],["q2","0","q0"],["q2","1","q3"],["q3","0","q3"],["q3","1","q3"]]
+        },
+        example3:{
+            states:"q0,q1,q2,q3", alphabet:"0,1", start:"q0", final:"q0",
+            transitions:[["q0","0","q1"],["q0","1","q0"],["q1","0","q0"],["q1","1","q1"],["q2","0","q3"],["q2","1","q2"],["q3","0","q2"],["q3","1","q3"]]
+        },
+        example4:{
+            states:"q0,q1,q2,q3,q4", alphabet:"0,1", start:"q0", final:"q4",
+            transitions:[["q0","0","q1"],["q0","1","q0"],["q1","0","q1"],["q1","1","q2"],["q2","0","q3"],["q2","1","q2"],["q3","0","q3"],["q3","1","q4"],["q4","0","q4"],["q4","1","q4"]]
+        }
+    };
+
+    const ex=examples[example]||examples.example1;
+    document.getElementById("states").value=ex.states;
+    document.getElementById("alphabet").value=ex.alphabet;
+    document.getElementById("start").value=ex.start;
+    document.getElementById("final").value=ex.final;
+    document.getElementById("transitions").innerHTML="";
+    transitionCount=0;
+    ex.transitions.forEach(t=>addTransition(t[0],t[1],t[2]));
+
+    diagramGenerated=false;
+    document.getElementById("dfaCanvas").innerHTML=`<svg id="dfaSVG"></svg><div id="placeholder" style="text-align:center;padding-top:190px;color:#666;">Example loaded — click Generate to visualize</div>`;
+    document.getElementById("stateCount").textContent="0";
+    document.getElementById("alphabetCount").textContent="0";
+    document.getElementById("finalCount").textContent="0";
+    document.getElementById("stringCount").textContent="0";
+    document.getElementById("rightGrammar").innerHTML="Generate grammar to see rules.";
+    document.getElementById("leftGrammar").innerHTML="Generate grammar to see rules.";
+    document.getElementById("stringSet").innerHTML="No strings generated yet.";
+    document.getElementById("testResult").innerHTML="";
+
+    const sel=document.getElementById("exampleSelect");
+    if(sel) sel.value=example;
+}
+
+
+
+/* =========================
+   RESET
+========================= */
+
+function resetAll(){
+
+    diagramGenerated = false;
+    document.getElementById("dfaCanvas").innerHTML = "";
+
+    document.getElementById("states")
+        .value = "";
+
+    document.getElementById("alphabet")
+        .value = "";
+
+    document.getElementById("start")
+        .value = "";
+
+    document.getElementById("final")
+        .value = "";
+
+
+    document.getElementById("transitions")
+        .innerHTML = "";
+
+    transitionCount = 0;
+
+
+    document.getElementById("rightGrammar")
+        .innerHTML =
+        "Generate grammar to see rules.";
+
+
+    document.getElementById("leftGrammar")
+        .innerHTML =
+        "Generate grammar to see rules.";
+
+
+    document.getElementById("stringSet")
+        .innerHTML =
+        "No strings generated yet.";
+
+
+    document.getElementById("testResult")
+        .innerHTML = "";
+
+
+    document.getElementById("dfaCanvas")
+        .innerHTML = `
+
+            <svg id="dfaSVG"></svg>
+
+            <div style="
+                text-align:center;
+                padding-top:190px;
+                color:#666;
+            ">
+                Enter DFA and click Generate Grammars
+            </div>
+
+        `;
+
+
+    document.getElementById("stateCount")
+        .textContent = "0";
+
+    document.getElementById("alphabetCount")
+        .textContent = "0";
+
+    document.getElementById("finalCount")
+        .textContent = "0";
+
+    document.getElementById("stringCount")
+        .textContent = "0";
+}
+
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+            .then(() => console.log("PWA ready"))
+            .catch(error => console.error("PWA error:", error));
+    });
+}
+</script>
+
+<script>
+let deferredPrompt = null;
+
+const installBtn = document.getElementById("installAppBtn");
+
+function isAppInstalled() {
+    return window.matchMedia("(display-mode: standalone)").matches ||
+           window.navigator.standalone === true;
+}
+
+function updateInstallButton() {
+    if (!installBtn) return;
+
+    if (isAppInstalled()) {
+        installBtn.style.display = "none";
+    } else {
+        installBtn.style.display = "inline-block";
+    }
+}
+
+updateInstallButton();
+
+window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+
+    deferredPrompt = event;
+
+    console.log("INSTALL PROMPT AVAILABLE");
+
+    updateInstallButton();
+});
+
+if (installBtn) {
+
+    installBtn.addEventListener("click", async () => {
+
+        if (!deferredPrompt) {
+
+            alert(
+                "Chrome install prompt is not available right now.\n\n" +
+                "Please use Chrome menu → Save and share → Install page as app."
+            );
+
+            return;
+        }
+
+        deferredPrompt.prompt();
+
+        const result = await deferredPrompt.userChoice;
+
+        console.log("Install result:", result.outcome);
+
+        deferredPrompt = null;
+
+        if (result.outcome === "accepted") {
+            installBtn.style.display = "none";
+        }
+    });
+}
+
+window.addEventListener("appinstalled", () => {
+
+    console.log("FA Regular Grammar Engine installed!");
+
+    if (installBtn) {
+        installBtn.style.display = "none";
+    }
+
+    deferredPrompt = null;
+});
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+            .then(registration => {
+                console.log("PWA ready", registration.scope);
+            })
+            .catch(error => {
+                console.error("PWA error:", error);
+            });
+    });
+}
+</script>
+</body>
+</html>
