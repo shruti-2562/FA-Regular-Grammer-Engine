@@ -1,4 +1,4 @@
-const CACHE_NAME = "fa-grammar-engine-v1";
+const CACHE_NAME = "fa-grammar-engine-v2";
 
 const FILES_TO_CACHE = [
   "./",
